@@ -187,16 +187,20 @@ public class UserController {
 
 ### ContentNegotiatingViewResolver
 
-스프링부트가 제공하는 뷰 리졸버 중 하나. 뷰를 찾기위해 요청URL의 확장자와 AcceptHeader를 사용한다. 
+뷰를 찾기 위해 요청 URL의 AcceptHeader를 사용하는 ViewResolver 
 
-- Accept Header: 클라이언트가 어떤 타입의 응답을 원하는 지 서버에게 알려주는 것
+- 하나의 URI를 통해 다양한 contentType 으로 응답을 할 수 있도록 도와준다. 
 
-  - Accept Header를 제공하지 않는 요청도 많다. 이런 경우에 대비해서 "foramt"이라는 매개변수를 사용
+- 응답을 만들 수 있는 모든 뷰를 찾고 최종적으로 Accept header와 뷰의 타입을 비교하여 리턴
 
-    ```
-    /path?format=xml
-    /path?format=html
-    ```
+  - Accept Header: 클라이언트가 어떤 타입의 응답을 원하는 지 서버에게 알려주는 것
+
+    - Accept Header를 제공하지 않는 요청도 많다. 이런 경우에 대비해서 "foramt"이라는 매개변수를 사용
+
+      ```
+      /path?format=xml
+      /path?format=html
+      ```
 
 <br/>
 
@@ -224,7 +228,8 @@ public void createUser_JSON() throws Exception {
 
   - HttpMessageConverterAutoConfiguration 
 
-    (이미지)
+    ![그림2](https://github.com/goyanglee/spring_boot_concept_application/blob/main/4_%EC%8A%A4%ED%94%84%EB%A7%81_%EB%B6%80%ED%8A%B8_%ED%99%9C%EC%9A%A9/image/MVC_img_2.png)
+
 
     - XmlMapper 클래스가 클래스패스에 있을 때만 컨버터가 등록이 되도록 설정되어 있음 
 
@@ -241,11 +246,10 @@ public void createUser_JSON() throws Exception {
 </dependency>
 ```
 <br/>
+
 3) 정리
-
-Json 응답 -> 기본으로 사용하기 때문에 설정필요 없음
-
-Xml 응답 -> 의존성 추가 필요
+- json response : 기본으로 사용하기 때문에 설정필요 없음
+- xml response : 의존성 추가 필요
 
 <br/>
 
