@@ -14,8 +14,8 @@
 @WebMvcTest(UserController.class) //웹 계층을 테스트할 수 있는 어노테이션
 public class UserControllerTest {
   
-		//웹 MVC를 테스트할 때 주로 사용하는 객체
-  	//@WebMvcTest가 MocMvc를 자동으로 빈으로 만들어주기 때문에 꺼내서 사용하면 된다.
+    //웹 MVC를 테스트할 때 주로 사용하는 객체
+    //@WebMvcTest가 MocMvc를 자동으로 빈으로 만들어주기 때문에 꺼내서 사용하면 된다.
     @Autowired
     MockMvc mockMvc;
 
@@ -42,14 +42,48 @@ public class UserController {
 
 별도 설정없이 구현할 수 있는 이유는, 스프링부트가 제공해주는 기본설정 덕분이다. 
 
-**[WebMvcAutoConfiguration 자동설정 파일]**
+<br/>
 
-(이미지) 
+**< WebMvcAutoConfiguration 자동설정 파일 >**
+
+![그림1](https://github.com/goyanglee/spring_boot_concept_application/blob/main/4_%EC%8A%A4%ED%94%84%EB%A7%81_%EB%B6%80%ED%8A%B8_%ED%99%9C%EC%9A%A9/image/MVC_img_1.png)
+
+<br/>
+
+```java
+
+@Configuration(
+    proxyBeanMethods = false
+)
+@ConditionalOnWebApplication(
+    type = Type.SERVLET //웹 어플리케이션
+)
+@ConditionalOnClass({Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class}) //클래스패스에 해당 클래스들 존재
+@ConditionalOnMissingBean({WebMvcConfigurationSupport.class}) //해당 클래스가 없으면
+@AutoConfigureOrder(-2147483638)
+@AutoConfigureAfter({DispatcherServletAutoConfiguration.class, TaskExecutionAutoConfiguration.class, ValidationAutoConfiguration.class}) //사용
+public class WebMvcAutoConfiguration {
+    public static final String DEFAULT_PREFIX = "";
+    public static final String DEFAULT_SUFFIX = "";
+    private static final String SERVLET_LOCATION = "/";
+
+    public WebMvcAutoConfiguration() {
+    }
+
+    @Bean
+    @ConditionalOnMissingBean({HiddenHttpMethodFilter.class})
+    @ConditionalOnProperty(
+        prefix = "spring.mvc.hiddenmethod.filter",
+        name = {"enabled"}
+    )
+    public OrderedHiddenHttpMethodFilter hiddenHttpMethodFilter() {
+        return new OrderedHiddenHttpMethodFilter();
+    }
+    ...
+```
 
 - HttpMessageConverterAutoConfiguration
 - 뷰리졸버 설정 제공
-
-
 
 <br/>
 
@@ -91,7 +125,7 @@ public class WebConfig implements WebMvcConfigurer {
   {"username":"goyanglee", "password":"20161114"} <=> User
   ```
 
-- 스프링부트 어노테이션 중 @RequestBody, @ResponseBody와 함께 사용
+- 스프링부트 어노테이션 중 @RequestBody, @ResponseBody로 메시지 컨버터를 적용함
 
 <br/>
 
@@ -106,19 +140,19 @@ public class UserController {
 }
 ```
 
-- 요청 형태, 응답 형태에 따라 사용하는 HttpMessageConverter가 달라진다. 
+- 요청 형태, 응답 형태에 따라 사용되는 HttpMessageConverter가 달라진다. 
 
-  - (요청) 
+  - **@RequestBody**
 
-    Content-Type: json, RequestBody: {"..":"..", ...} => JsonMessageConverter가 Json 형태의 메시지를 User 객체로 변환해준다
+    요청바디=Json형태 : JsonMessageConverter가 Json 형태의 본문을 객체로 변환해준다.
 
-  - (응답) 
+  - **@ResponseBody**
 
-    return type : User => HTTP 메시지는 모두 문자이기 때문에 객체를 리턴할 수 없다. 따라서 HttpMessageConverter를 사용해서 객체를 적절하게 변환해줘야하는데 기본적으로는 JsonMessageConverter가 사용이 된다. 
+    리턴타입=User : 기본적으로 JsonMessageConverter를 사용하여 객체를 변환해준다. (HTTP메시지는 문자이기 때문에 객체자체 리턴X)
 
-    return type : String => StringMessageConverter가 사용된다. 
+    리턴타입=String : StringMessageConverter가 사용된다. 
 
-    return type : int => 값 자체를 String으로 변환할 수 있기 때문에 StringMessageConverter가 사용된다. 
+    리턴타입=int : 정수값 자체를 String으로 변환할 수 있기 때문에 StringMessageConverter가 사용된다. 
 
 <br/>
 
@@ -144,7 +178,10 @@ public class UserController {
 }
 ```
 
-@RestController를 사용하면 @ResponseBody를 생략할 수 있지만, @Controller를 사용한 경우에는 @ResponseBody를 붙여줘야 반환 값에 메시지컨버터가 적용이 된다. @ResponseBody 어노테이션을 붙이지 않으면, 빈네임뷰리졸버가 "hello" 리턴 값에 해당하는 뷰를 찾으려고 시도해버린다. case1은 @ReseController를 사용했기 때문에 뷰 리졸버가 아닌 메시지리졸버를 적용하게되어 응답 본문으로 "hello"라는 내용이 전달되는 것
+- **@RestController를 사용하면 @ResponseBody를 생략해도 된다.**
+  - MessageConverter가 적용되어 반환값을 응답본문으로 바꾼다. 
+- **@Controller를 사용할 경우에는 @ResponseBody를 붙여줘야 반환 값에 메시지컨버터가 적용이 된다.**
+  - @ResponseBody를 선언하지 않으면 BeanNameViewResolver에 의해서 ViewName에 해당하는 뷰를 찾으려고 치도한다. 
 
 <br/>
 
@@ -163,9 +200,9 @@ public class UserController {
 
 <br/>
 
-**ContentNegotiatingViewResolver 동작확인을 위해 응답을 XML로 받아보기**
+**< ContentNegotiatingViewResolver 동작확인을 위해 응답을 XML로 받아보기 >**
 
-1) 테스트 코드 작성
+(1) 테스트 코드 작성
 
 ```java
 @Test
@@ -192,8 +229,9 @@ public void createUser_JSON() throws Exception {
     - XmlMapper 클래스가 클래스패스에 있을 때만 컨버터가 등록이 되도록 설정되어 있음 
 
       => 의존성 추가 필요
+<br/>
 
-2) pom.xml 의존성 추가
+(2) pom.xml 의존성 추가
 
 ```xml
 <dependency>
@@ -202,7 +240,7 @@ public void createUser_JSON() throws Exception {
   <version>2.9.6</version>
 </dependency>
 ```
-
+<br/>
 3) 정리
 
 Json 응답 -> 기본으로 사용하기 때문에 설정필요 없음
@@ -283,8 +321,8 @@ If-Modified-Since : 요청이 들어왔을 때마다 업데이트 됨
             			//이 요청을 클래스패스 기준으로 m 디렉토리 밑에서 제공을 하겠다 
             			//맨 뒤 '/'붙여줘야 매핑 제대로 동작
                   .setCachePeriod(20); 
-        					//단위:초
-        					//캐시전략 직접설정
+        			//단위:초
+        			//캐시전략 직접설정
       }
   }
   ```
